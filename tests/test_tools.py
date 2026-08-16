@@ -10,10 +10,10 @@ import base64
 
 import httpx
 import pytest
-from busylib import BusyBar, display as bbdisplay
+from busylib import BusyBar
+from busylib import display as bbdisplay
 
 from busybar_mcp import server
-
 
 FRONT_PX = bbdisplay.FRONT_DISPLAY.width * bbdisplay.FRONT_DISPLAY.height
 BACK_PX = bbdisplay.BACK_DISPLAY.width * bbdisplay.BACK_DISPLAY.height

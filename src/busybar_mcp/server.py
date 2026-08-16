@@ -14,14 +14,18 @@ own compatibility handling instead of duplicating it.
 from __future__ import annotations
 
 import io
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from busylib import BusyBar, converter, display as bbdisplay, exceptions, types
+from busylib import BusyBar, converter, exceptions, types
+from busylib import display as bbdisplay
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     name="busybar",
@@ -60,8 +64,10 @@ class _Conn:
         if self.client is not None:
             try:
                 self.client.close()
-            except Exception:  # noqa: BLE001 - closing must never mask the real error
-                pass
+            except Exception:
+                # Closing must never mask the real error the caller is already
+                # handling; log at debug and move on rather than swallow silently.
+                logger.debug("error closing stale BusyBar client", exc_info=True)
         self.client = None
 
 
@@ -75,7 +81,7 @@ class ToolError(RuntimeError):
 def _client() -> BusyBar:
     try:
         return _conn.get()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ToolError(f"Could not create a client for {_conn.host}: {exc}") from exc
 
 
@@ -174,7 +180,7 @@ def connect(host: str, token: str | None = None) -> dict[str, Any]:
             "api_semver": getattr(v, "api_semver", None),
             "authenticated": token is not None,
         }
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
 
@@ -192,14 +198,15 @@ def device_status() -> dict[str, Any]:
         try:
             b = bb.display_brightness()
             out["brightness"] = {"front": b.front, "back": b.back}
-        except Exception:  # noqa: BLE001 - optional detail, never fail the whole call
-            pass
+        except Exception:
+            # Optional detail — never fail the whole status call over it.
+            logger.debug("could not read display_brightness", exc_info=True)
         try:
             out["volume"] = bb.audio_volume().volume
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:
+            logger.debug("could not read audio_volume", exc_info=True)
         return out
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
 
@@ -234,7 +241,7 @@ def draw(
             application_name=application_name,
             elements=elements,  # type: ignore[arg-type]  # pydantic discriminates on `type`
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ToolError(
             f"Invalid element payload: {exc}. Every element needs `id` and `type`; "
             "check field names against the element type you chose."
@@ -242,7 +249,7 @@ def draw(
 
     try:
         bb.display_draw(payload, clear_before_draw=clear_before_draw)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
     return {
@@ -266,7 +273,7 @@ def preview(which: Literal["front", "back"] = "front", scale: int = 6) -> Image:
     bb = _client()
     try:
         raw = bb.screen(spec.name)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
     px = spec.width * spec.height
@@ -299,7 +306,7 @@ def clear() -> dict[str, str]:
     try:
         bb.display_clear()
         return {"status": "cleared"}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
 
@@ -319,7 +326,7 @@ def upload_asset(
             filename, payload = converter.convert_for_storage(local_path, fh.read())
     except FileNotFoundError as exc:
         raise ToolError(f"No such file: {local_path}") from exc
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ToolError(
             f"Could not convert {local_path} for the device: {exc}"
         ) from exc
@@ -329,7 +336,7 @@ def upload_asset(
         bb.assets_upload(
             application_name=application_name, filename=filename, data=payload
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
     return {
@@ -347,7 +354,7 @@ def play_audio(path: str, application_name: str = DEFAULT_APP) -> dict[str, str]
     try:
         bb.audio_play(path=path)
         return {"status": "playing", "path": path, "application_name": application_name}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
 
@@ -358,7 +365,7 @@ def stop_audio() -> dict[str, str]:
     try:
         bb.audio_stop()
         return {"status": "stopped"}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise _wrap(exc) from exc
 
 

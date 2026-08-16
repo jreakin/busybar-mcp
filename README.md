@@ -90,10 +90,19 @@ Fonts: `tiny`, `small`, `normal`, `condensed`, `bold`, `large`, `extra_large`, `
 > "Put BUILDING on the front display and show me how it looks."
 
 ```python
-draw(elements=[{
-    "id": "status", "type": "text", "x": 2, "y": 4, "display": "front",
-    "text": "BUILDING", "font": "small",
-}])
+draw(
+    elements=[
+        {
+            "id": "status",
+            "type": "text",
+            "x": 2,
+            "y": 4,
+            "display": "front",
+            "text": "BUILDING",
+            "font": "small",
+        }
+    ]
+)
 preview(which="front")
 ```
 
