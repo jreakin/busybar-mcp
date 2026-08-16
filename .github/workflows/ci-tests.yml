@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 matches pyproject.toml's requires-python floor; 3.12 matches the version
+        # this suite has actually been run against locally.
+        python-version: ['3.10', '3.12']
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv sync --extra dev
+
+      - name: Run tests
+        run: uv run pytest tests/ --junitxml=test-results.xml -v
+
+      - name: Upload test reports
+        if: always() && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: test-results.xml
+          retention-days: 5
+
+# No coverage measurement: pytest-cov isn't a current dev dependency. Adding it means
+# adding a new dependency to pyproject.toml, which is out of scope for this pass — add
+# --cov=src --cov-report=json:coverage.json alongside pytest-cov in pyproject.toml's
+# [dev] extra if coverage tracking is wanted later.

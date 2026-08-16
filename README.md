@@ -1,5 +1,15 @@
 # busybar-mcp
 
+[![CI](https://img.shields.io/github/actions/workflow/status/jreakin/busybar-mcp/ci.yml?branch=main)](https://github.com/jreakin/busybar-mcp/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+
+Built on:
+[![busylib](https://img.shields.io/pypi/v/busylib?label=busylib)](https://pypi.org/project/busylib/)
+[![fastmcp](https://img.shields.io/pypi/v/fastmcp?label=fastmcp)](https://pypi.org/project/fastmcp/)
+[![Pillow](https://img.shields.io/pypi/v/pillow?label=pillow)](https://pypi.org/project/Pillow/)
+
 An MCP server for **building** [BUSY Bar](https://busy.app/) apps — draw to the displays, see what
 actually rendered, upload converted assets, and inspect the device, all from an AI coding agent.
 

@@ -1,0 +1,31 @@
+name: Quality Checks
+
+on:
+  workflow_call:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: ruff check .
+
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: ruff format --check .
+
+# No typecheck job: this project doesn't use ty/mypy/pyright today (see pyproject.toml dev
+# deps — pytest + httpx only). Add one here if a type checker is adopted later; not forcing
+# a new dev dependency into a retrofit that wasn't asked to add one.

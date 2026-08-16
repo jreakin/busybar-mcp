@@ -1,0 +1,132 @@
+name: CI Report
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-report:
+    name: PR Report
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runId = context.payload.workflow_run.id;
+            const allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: runId,
+            });
+            async function downloadArtifact(name, dest) {
+              const match = allArtifacts.data.artifacts.find(a => a.name === name);
+              if (!match) { core.warning(`Artifact "${name}" not found`); return false; }
+              const zip = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner, repo: context.repo.repo,
+                artifact_id: match.id, archive_format: 'zip',
+              });
+              fs.mkdirSync(dest, { recursive: true });
+              fs.writeFileSync(path.join(dest, `${name}.zip`), Buffer.from(zip.data));
+              return true;
+            }
+            const temp = process.env.RUNNER_TEMP;
+            await downloadArtifact('pr-meta', path.join(temp, 'dl'));
+            await downloadArtifact('test-reports', path.join(temp, 'dl'));
+
+      - name: Extract artifacts
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/dl"
+          for z in *.zip; do
+            [ -f "$z" ] || continue
+            name="${z%.zip}"
+            mkdir -p "$RUNNER_TEMP/artifacts/$name"
+            unzip -o "$z" -d "$RUNNER_TEMP/artifacts/$name"
+          done
+
+      - name: Read PR metadata
+        id: meta
+        shell: bash
+        run: |
+          DIR="$RUNNER_TEMP/artifacts/pr-meta"
+          if [ ! -f "$DIR/pr_number" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          PR_NUM=$(cat "$DIR/pr_number" | tr -d '[:space:]')
+          if ! [[ "$PR_NUM" =~ ^[0-9]+$ ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false"          >> "$GITHUB_OUTPUT"
+          echo "pr_number=$PR_NUM"   >> "$GITHUB_OUTPUT"
+          validate_result() {
+            local val=$(cat "$1" | tr -d '[:space:]')
+            case "$val" in success|failure|cancelled|skipped) echo "$val" ;; *) echo "unknown" ;; esac
+          }
+          echo "quality=$(validate_result "$DIR/quality_result")" >> "$GITHUB_OUTPUT"
+          echo "tests=$(validate_result "$DIR/tests_result")"     >> "$GITHUB_OUTPUT"
+
+      - name: Build report
+        if: steps.meta.outputs.skip != 'true'
+        id: report
+        shell: bash
+        env:
+          QUALITY: ${{ steps.meta.outputs.quality }}
+          TESTS: ${{ steps.meta.outputs.tests }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          DIR="$RUNNER_TEMP/artifacts"
+          RESULTS_FILE=$(find "$DIR/test-reports" -name "test-results.xml" -type f 2>/dev/null | head -1)
+          if [ -n "$RESULTS_FILE" ] && [ -f "$RESULTS_FILE" ]; then
+            TOTAL=$(grep -oP 'tests="\K[0-9]+' "$RESULTS_FILE" | head -1)
+            FAILED=$(grep -oP 'failures="\K[0-9]+' "$RESULTS_FILE" | head -1)
+            ERRORS=$(grep -oP 'errors="\K[0-9]+' "$RESULTS_FILE" | head -1)
+            SKIPPED=$(grep -oP 'skipped="\K[0-9]+' "$RESULTS_FILE" | head -1)
+            DURATION=$(grep -oP 'time="\K[0-9.]+' "$RESULTS_FILE" | head -1)
+            PASSED=$((TOTAL - FAILED - ERRORS - SKIPPED))
+            FAILED=$((FAILED + ERRORS))
+          else
+            TOTAL=0; PASSED=0; FAILED=0; SKIPPED=0; DURATION=0
+          fi
+          status_icon() { case "$1" in success) echo "✅" ;; failure) echo "❌" ;; *) echo "❓" ;; esac; }
+          if [[ "$QUALITY" == "success" && "$TESTS" == "success" ]]; then OVERALL="✅ **All checks passed**"; else OVERALL="❌ **Some checks failed**"; fi
+          {
+            echo "body<<CI_REPORT_EOF"
+            echo "## CI Report"; echo ""
+            echo "${OVERALL}"; echo ""
+            echo "### Pipeline Status"; echo ""
+            echo "| Stage | Status | Details |"; echo "|-------|--------|---------|"
+            echo "| $(status_icon "$QUALITY") Quality | \`${QUALITY}\` | ruff check + ruff format |"
+            echo "| $(status_icon "$TESTS") Tests | \`${TESTS}\` | pytest (Python 3.10, 3.12) |"; echo ""
+            if [ "$TOTAL" -gt 0 ] 2>/dev/null; then
+              echo "### Test Results"; echo ""
+              echo "| Tests | Passed | Failed | Skipped | Duration |"; echo "|-------|--------|--------|---------|----------|"
+              echo "| ${TOTAL} | ${PASSED} | ${FAILED} | ${SKIPPED} | ${DURATION}s |"; echo ""
+            fi
+            echo "---"
+            echo "<sub>📋 [View full run](${RUN_URL}) · Generated by CI</sub>"
+            echo "CI_REPORT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        if: steps.meta.outputs.skip != 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ci-report
+          number: ${{ steps.meta.outputs.pr_number }}
+          message: ${{ steps.report.outputs.body }}
+
+# Simplified from the canonical template: no coverage-delta section, since this project
+# doesn't measure coverage (see ci-tests.yml note). Pipeline status + JUnit test counts only.
