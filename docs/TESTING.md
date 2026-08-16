@@ -1,6 +1,6 @@
 # TESTING.md
-# Version: 1.0.0
-# Last Updated: 2026-08-16
+
+**Version:** 1.0.0 | **Last Updated:** 2026-08-16
 
 ## Strategy
 

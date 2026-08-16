@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Download artifacts
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const fs = require('fs');
@@ -122,7 +122,10 @@ jobs:
 
       - name: Comment on PR
         if: steps.meta.outputs.skip != 'true'
-        uses: marocchino/sticky-pull-request-comment@v2
+        # NOTE: this repo publishes no bare "v2" tag (only full v2.x.x, and it's now on a v3
+        # line) -- the previous `@v2` reference didn't resolve to anything real. Pinned to the
+        # latest actual v2.x release to preserve current behavior; evaluate v3 separately.
+        uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2.9.4
         with:
           header: ci-report
           number: ${{ steps.meta.outputs.pr_number }}

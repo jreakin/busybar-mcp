@@ -3,7 +3,7 @@
 Every plan lives in its own `docs/plans/{NNNN}-{slug}/` folder. Numbers are sequential and
 never reused, mirroring `docs/adr/`'s numbering.
 
-```
+```text
 docs/plans/{NNNN}-{slug}/
   PLAN.md      # the plan itself
   STATUS.md    # draft | in-progress | complete | abandoned

@@ -11,7 +11,7 @@ artifacts, not build output or session scratch.
 
 ## Structure per agent
 
-```
+```text
 prompts/{agent-name}/
   current.md      # active prompt — MUST start with a "# Version: X.Y.Z" header
   v{X.Y.Z}.md      # versioned snapshot — required, not a stub

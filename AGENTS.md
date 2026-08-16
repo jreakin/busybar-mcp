@@ -1,21 +1,20 @@
 # AGENTS.md
-# Version: 1.0.0
-# Last Updated: 2026-08-16
-# Environment: dev
-# Project: busybar-mcp
-# Maintainer: jreakin
+
+**Version:** 1.0.0 | **Last Updated:** 2026-08-16 | **Environment:** dev
+**Project:** busybar-mcp | **Maintainer:** jreakin
 
 You are working on **busybar-mcp** — an unofficial MCP server that lets an AI coding agent
 draw to, preview, and inspect a BUSY Bar LED device (`busylib` + `fastmcp`). See `README.md`
 for the tool list and device model; see `UPSTREAM-ISSUE.md` for a known upstream `busylib` bug.
 
 ## Agent Scope
-Reads:      src/, tests/, docs/, prompts/, README.md, UPSTREAM-ISSUE.md
-Writes:     src/, tests/, docs/, prompts/
+Reads:      src/, tests/, docs/, prompts/, README.md, NOTES.md, AGENTS.md, UPSTREAM-ISSUE.md
+Writes:     src/, tests/, docs/, prompts/, README.md, NOTES.md, AGENTS.md
 Executes:   uv, ruff, pytest, git, gh (read + PR creation)
 Off-limits: publishing to PyPI, tagging releases, editing LICENSE — ask first
 
 ## Commands
+
 ```bash
 uv venv && uv pip install -e ".[dev]"   # setup
 uv run pytest -q                        # all tests — pure httpx.MockTransport, no hardware needed

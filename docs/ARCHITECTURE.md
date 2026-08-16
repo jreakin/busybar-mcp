@@ -1,13 +1,13 @@
 # ARCHITECTURE.md
-# Version: 1.0.0
-# Last Updated: 2026-08-16
+
+**Version:** 1.0.0 | **Last Updated:** 2026-08-16
 
 ## System overview
 
 busybar-mcp is a single MCP server, not a multi-agent system — there's one process, one tool
 registry, one connection to one device. `src/busybar_mcp/server.py` is the entire implementation.
 
-```
+```text
 Agent (Claude Code, etc.) → MCP tool call → server.py → busylib → BUSY Bar device (HTTP)
                                     ↑                                      │
                                     └──────────── preview (PNG) ───────────┘
@@ -41,7 +41,8 @@ because the device returns success for draws that render nothing.
 
 Nothing here is destructive or reaches beyond one local/LAN device — there's no database, no
 multi-tenant state, no financial or irreversible operation. All risk classification is LOW; see
-`docs/GUARDRAILS.md` for the two real risks that exist (silent no-ops, firmware/API drift).
+`docs/GUARDRAILS.md` for the three real risks that exist (silent no-ops, firmware/API drift,
+`BUSYBAR_TOKEN` handling).
 
 ## Error architecture
 

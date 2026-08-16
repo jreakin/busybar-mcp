@@ -5,3 +5,6 @@ dist/
 build/
 .pytest_cache/
 .cursor/plans/
+.env
+.env.*
+!.env.example

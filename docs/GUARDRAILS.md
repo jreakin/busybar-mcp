@@ -1,7 +1,6 @@
 # GUARDRAILS.md
-# Version: 1.0.0
-# Last Updated: 2026-08-16
-# Total Signs: 3
+
+**Version:** 1.0.0 | **Last Updated:** 2026-08-16 | **Total Signs:** 3
 
 Persistent safety constraints for this codebase. Kept intentionally short — most of the
 enterprise GUARDRAILS.md template (PII handling, moderation, multi-agent escalation, financial
@@ -10,7 +9,7 @@ destructive operations. The real risks here are narrower.
 
 ## Privilege boundaries
 
-```
+```text
 Allowed:
   - Read:  src/, tests/, README.md, UPSTREAM-ISSUE.md
   - Write: src/, tests/
