@@ -51,7 +51,9 @@ class _Conn:
 
     def get(self) -> BusyBar:
         if self.client is None:
-            self.client = BusyBar(self.host, token=self.token, compatibility_mode="warn")
+            self.client = BusyBar(
+                self.host, token=self.token, compatibility_mode="warn"
+            )
         return self.client
 
     def reset(self) -> None:
@@ -130,7 +132,9 @@ def _wrap(exc: Exception) -> ToolError:
 
 def _spec(name: str) -> bbdisplay.DisplaySpec:
     return bbdisplay.get_display_spec(
-        types.DisplayName.BACK if str(name).lower() == "back" else types.DisplayName.FRONT
+        types.DisplayName.BACK
+        if str(name).lower() == "back"
+        else types.DisplayName.FRONT
     )
 
 
@@ -279,7 +283,9 @@ def preview(which: Literal["front", "back"] = "front", scale: int = 6) -> Image:
     # Nearest-neighbour: these are 72x16 pixel-art panels and smoothing would
     # misrepresent which pixels are actually lit.
     scale = max(1, min(int(scale), 20))
-    img = img.resize((spec.width * scale, spec.height * scale), PILImage.NEAREST)
+    img = img.resize(
+        (spec.width * scale, spec.height * scale), PILImage.Resampling.NEAREST
+    )
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -314,7 +320,9 @@ def upload_asset(
     except FileNotFoundError as exc:
         raise ToolError(f"No such file: {local_path}") from exc
     except Exception as exc:  # noqa: BLE001
-        raise ToolError(f"Could not convert {local_path} for the device: {exc}") from exc
+        raise ToolError(
+            f"Could not convert {local_path} for the device: {exc}"
+        ) from exc
 
     bb = _client()
     try:
